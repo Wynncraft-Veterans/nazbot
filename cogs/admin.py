@@ -70,12 +70,11 @@ class Admin(commands.Cog, name="admin"):
         seenDates = dict.fromkeys(guildMembers, datetime.fromisoformat('2012-01-01T00:01:00.000Z'))
 
         await statusMessage.edit(embed=messageFormatter("From the guild's data, extracting members' dates last seen."))
-        await statusMessage.edit(embed=messageFormatter("Please wait. This can take up to 2 minutes."))
 
         processedItems = 0
         for member in guildMembers:
             processedItems += 1
-            await statusMessage.edit(embed=messageFormatter("Please wait. This can take up to 2 minutes [" + str(round(100 * processedItems / len(guildMembers))) + "%]"))
+            await statusMessage.edit(embed=messageFormatter("From the guild's data, extracting members' dates last seen. [" + str(round(100 * processedItems / len(guildMembers))) + "%]"))
 
             playerObject = fetchLastSeen(member)
             seenDate = datetime.fromisoformat(playerObject['lastJoin'])
@@ -85,15 +84,22 @@ class Admin(commands.Cog, name="admin"):
 
         await statusMessage.edit(embed=messageFormatter("Filtering guild member list to kickable date deltas."))
         await statusMessage.edit(embed=messageFormatter("Resolving kickable player UUIDs to usernames."))
-        await statusMessage.edit(embed=messageFormatter("Please wait. This may take up to 15 seconds."))
         kickList = ""
+        processedItems = 0
         for member in guildMembers:
+            processedItems += 1
+            await statusMessage.edit(embed=messageFormatter("Resolving kickable player UUIDs to usernames. [" + str(round(100 * processedItems / len(guildMembers))) + "%]"))
             kickDate = datetime.now(timezone.utc) - timedelta(days=14)
             seenDate = seenDates[member]
             if seenDate < kickDate:
                 timeSpentAway = datetime.now(timezone.utc) - seenDate
 
                 mojangQuery = requests.get('https://api.minecraftservices.com/minecraft/profile/lookup/' + member)
+
+                while mojangQuery.status_code == 429:
+                    time.sleep(2.5)
+                    mojangQuery = requests.get('https://api.minecraftservices.com/minecraft/profile/lookup/' + member)
+
                 playerUsernameObject = mojangQuery.json()
                 playerUsername = playerUsernameObject['name']
                 kickList += "- `" + playerUsername + "` has been away for " + str(timeSpentAway.days) + " days.\n"

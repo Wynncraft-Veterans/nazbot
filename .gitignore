@@ -173,3 +173,6 @@ cython_debug/
 # Docker secrets
 .env
 database/database.db
+
+# Work Environments
+cogs/archive
