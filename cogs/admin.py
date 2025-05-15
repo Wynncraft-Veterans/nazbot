@@ -39,7 +39,11 @@ class Admin(commands.Cog, name="admin"):
 
         def fetchLastSeen(uuid):
             response = requests.get('https://api.wynncraft.com/v3/player/' + uuid)
-            time.sleep(0.5)
+
+            while response.status_code == 429:
+                time.sleep(2.5)
+                response = requests.get('https://api.wynncraft.com/v3/player/' + uuid)
+
             return response.json()
         
         embed = discord.Embed(
@@ -60,6 +64,11 @@ class Admin(commands.Cog, name="admin"):
         
         await statusMessage.edit(embed=messageFormatter("Fetching the guild's data from Wynn's API."))
         response = requests.get('https://api.wynncraft.com/v3/guild/prefix/VETS')
+
+        while response.status_code == 429:
+            time.sleep(2.5)
+            response = requests.get('https://api.wynncraft.com/v3/guild/prefix/VETS')
+
         guildObject = response.json()
 
         await statusMessage.edit(embed=messageFormatter("Extracting the guild's members' UUIDs."))
