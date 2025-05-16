@@ -15,28 +15,28 @@ class ProfSelection(discord.ui.Select):
     def __init__(self) -> None:
         options = [
             discord.SelectOption(
-                label="armouring", description="Helmets and/or chestplates.", emoji="✂"
+                label="armouring", description="Helmets and/or chestplates.", emoji="🪖"
             ),
             discord.SelectOption(
-                label="tailoring", description="Leggings and/or boots.", emoji="🪨"
+                label="tailoring", description="Leggings and/or boots.", emoji="👞"
             ),
             discord.SelectOption(
-                label="jeweling", description="Bracelets, rings, and/or necklaces.", emoji="🧻"
+                label="jeweling", description="Bracelets, rings, and/or necklaces.", emoji="💍"
             ),
             discord.SelectOption(
-                label="weaponsmithing", description="Spears an/or daggers.", emoji="🧻"
+                label="weaponsmithing", description="Spears an/or daggers.", emoji="🗡️"
             ),
             discord.SelectOption(
-                label="woodworking", description="Wands, bows, and/or reliks.", emoji="🧻"
+                label="woodworking", description="Wands, bows, and/or reliks.", emoji="🏹"
             ),
             discord.SelectOption(
-                label="alchemism", description="Potions.", emoji="🧻"
+                label="alchemism", description="Potions.", emoji="⚗️"
             ),
             discord.SelectOption(
-                label="scribing", description="Scrolls.", emoji="🧻"
+                label="scribing", description="Scrolls.", emoji="📜"
             ),
             discord.SelectOption(
-                label="cooking", description="Food.", emoji="🧻"
+                label="cooking", description="Food.", emoji="🍗"
             ),
         ]
         super().__init__(

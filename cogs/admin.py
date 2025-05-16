@@ -25,27 +25,7 @@ class Admin(commands.Cog, name="admin"):
         """
         This command fetches the guild's members, fetches their last seen date, and compiles a list of everyone who hasn't played in a while.
         """
-        # Function to iterate through json
-        def iterate(data):
-            if isinstance(data, list):
-                for item in data:
-                    yield from iterate(item)
-            elif isinstance(data, dict):
-                for key, item in data.items():
-                    if key == 'uuid':
-                        yield item
-                    else:
-                        yield from iterate(item)
-
-        def fetchLastSeen(uuid):
-            response = requests.get('https://api.wynncraft.com/v3/player/' + uuid)
-
-            while response.status_code == 429:
-                time.sleep(2.5)
-                response = requests.get('https://api.wynncraft.com/v3/player/' + uuid)
-
-            return response.json()
-        
+        # Message feedback system
         embed = discord.Embed(
             title = "VETS Guild Purge List",
             description = "Starting purge list compilation program.",
@@ -53,66 +33,87 @@ class Admin(commands.Cog, name="admin"):
         )
         statusMessage = await context.send(embed=embed)
         
-        def messageFormatter(messagePayload):
+        async def sendReply(messagePayload):
             embed = discord.Embed(
                 title = "VETS Guild Purge List",
                 description = messagePayload,
                 color = discord.Color.orange()
             )
             print(messagePayload)
-            return embed
+            await statusMessage.edit(embed=embed)
+            return
+
+        # Function to iterate through json
+        def iterate(filter, data):
+            if isinstance(data, list):
+                for item in data:
+                    yield from iterate(filter, item)
+            elif isinstance(data, dict):
+                for key, item in data.items():
+                    if key == filter:
+                        yield item
+                    else:
+                        yield from iterate(filter, item)
+
+        # A system to fetch shit from APIs.
+        async def fetchAPI(linkToAPI):
+            response = requests.get(linkToAPI)
+            while response.status_code == 429:
+                await sendReply("We're getting ratelimited by an API. Trying again in a few seconds")
+                time.sleep(2.5)
+                response = requests.get(linkToAPI)
+            return response.json()
         
-        await statusMessage.edit(embed=messageFormatter("Fetching the guild's data from Wynn's API."))
-        response = requests.get('https://api.wynncraft.com/v3/guild/prefix/VETS')
+        # Fetch a list of the guild's members' UUIDs.
+        async def fetchGuildList():
+            await sendReply("Fetching the guild's data from Wynn's API.")
+            guildObject = await fetchAPI('https://api.wynncraft.com/v3/guild/prefix/VETS')
 
-        while response.status_code == 429:
-            time.sleep(2.5)
-            response = requests.get('https://api.wynncraft.com/v3/guild/prefix/VETS')
+            await sendReply("Extracting the guild's members' UUIDs")
+            guildUUIDsObject = list(iterate("uuid", guildObject))
+            guildUUIDs = guildUUIDsObject[1:]
 
-        guildObject = response.json()
+            return guildUUIDs
+        
+        # Fetch a list of members' dates last seen
+        async def generateKickList():
+            guildUUIDs = await fetchGuildList()
+            await sendReply("Attaching date field to members' UUIDs.")
+            guildDatesList = dict.fromkeys(guildUUIDs, datetime.fromisoformat('2012-01-01T00:01:00.000Z'))
 
-        await statusMessage.edit(embed=messageFormatter("Extracting the guild's members' UUIDs."))
-        parsed = list(iterate(guildObject))
-        guildMembers = parsed[1:]
+            await sendReply("From the guild's data, extracting members' dates last seen. [0%]")
 
-        await statusMessage.edit(embed=messageFormatter("Attaching date field to members' UUIDs."))
-        seenDates = dict.fromkeys(guildMembers, datetime.fromisoformat('2012-01-01T00:01:00.000Z'))
+            processedItems = 0
+            for uuid in guildDatesList:
+                processedItems += 1
+                await sendReply("From the guild's data, extracting members' dates last seen. [" + str(round(100 * processedItems / len(guildDatesList))) + "%]")
 
-        await statusMessage.edit(embed=messageFormatter("From the guild's data, extracting members' dates last seen."))
+                playerObject = await fetchAPI('https://api.wynncraft.com/v3/player/' + uuid)
+                seenDate = datetime.fromisoformat(playerObject['lastJoin'])
+                guildDatesList[uuid] = seenDate
 
-        processedItems = 0
-        for member in guildMembers:
-            processedItems += 1
-            await statusMessage.edit(embed=messageFormatter("From the guild's data, extracting members' dates last seen. [" + str(round(100 * processedItems / len(guildMembers))) + "%]"))
+            await sendReply("Filtering kickable date deltas and resolving to usernames")
 
-            playerObject = fetchLastSeen(member)
-            seenDate = datetime.fromisoformat(playerObject['lastJoin'])
-
-            seenDates[member] = seenDate
-
-
-        await statusMessage.edit(embed=messageFormatter("Filtering guild member list to kickable date deltas."))
-        await statusMessage.edit(embed=messageFormatter("Resolving kickable player UUIDs to usernames."))
-        kickList = ""
-        processedItems = 0
-        for member in guildMembers:
-            processedItems += 1
-            await statusMessage.edit(embed=messageFormatter("Resolving kickable player UUIDs to usernames. [" + str(round(100 * processedItems / len(guildMembers))) + "%]"))
+            kicklist = ""
+            processedItems = 0
             kickDate = datetime.now(timezone.utc) - timedelta(days=14)
-            seenDate = seenDates[member]
-            if seenDate < kickDate:
-                timeSpentAway = datetime.now(timezone.utc) - seenDate
 
-                mojangQuery = requests.get('https://api.minecraftservices.com/minecraft/profile/lookup/' + member)
+            for uuid in guildDatesList:
+                processedItems += 1
+                await sendReply("Filtering kickable date deltas and resolving to usernames. [" + str(round(100 * processedItems / len(guildDatesList))) + "%]")
 
-                while mojangQuery.status_code == 429:
-                    time.sleep(2.5)
-                    mojangQuery = requests.get('https://api.minecraftservices.com/minecraft/profile/lookup/' + member)
+                seenDate = guildDatesList[uuid]
 
-                playerUsernameObject = mojangQuery.json()
-                playerUsername = playerUsernameObject['name']
-                kickList += "- `" + playerUsername + "` has been away for " + str(timeSpentAway.days) + " days.\n"
+                if seenDate < kickDate:
+                    timeSpentAway = datetime.now(timezone.utc) - seenDate
+                    playerUsernameObject = await fetchAPI('https://api.minecraftservices.com/minecraft/profile/lookup/' + uuid)
+                    playerUsername = playerUsernameObject['name']
 
+                    kicklist += "- `" + playerUsername + "` has been away for " + str(timeSpentAway.days) + " days.\n"
+
+            return kicklist
+
+        kickList = await generateKickList()
         embed = discord.Embed(
             title = "VETS Guild Purge List",
             description = kickList,
