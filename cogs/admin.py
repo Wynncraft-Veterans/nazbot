@@ -9,19 +9,19 @@ from datetime import datetime, timedelta, timezone
 import time
 import requests
 
-# Here we name the cog and create a new class for the cog.
+# Cog naming and creation.
 class Admin(commands.Cog, name="admin"):
     def __init__(self, bot) -> None:
         self.bot = bot
 
-    # Here you can just add your own commands, you'll always need to provide "self" as first parameter.
+    # Commands in cog.
 
     @commands.hybrid_command(
         name="purgelist",
         description="Gets a list of people likely to get purged for inactivity.",
     )
     @commands.has_permissions(manage_messages=True)
-    async def testcommand(self, context: Context) -> None:
+    async def purgecommand(self, context: Context) -> None:
         """
         This command fetches the guild's members, fetches their last seen date, and compiles a list of everyone who hasn't played in a while.
         """
