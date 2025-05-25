@@ -176,3 +176,4 @@ database/database.db
 
 # Work Environments
 cogs/archive
+.sh
