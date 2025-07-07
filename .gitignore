@@ -175,6 +175,7 @@ cython_debug/
 .env
 database/database.db
 database/elo_data.json
+database/feedback.pickle
 
 # Work Environments
 cogs/archive
