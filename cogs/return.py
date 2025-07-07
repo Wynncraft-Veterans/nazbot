@@ -140,16 +140,16 @@ class Return(commands.Cog, name="return"):
             await channel.send(f"Things we are doing well:\n```\n{feedback_form.answer1}\n```")
         
         if feedback_form.answer2:
-            await channel.send(f"Things we are doing well:\n```\n{feedback_form.answer2}\n```")
+            await channel.send(f"Things we should improve:\n```\n{feedback_form.answer2}\n```")
             
         if feedback_form.answer3:
-            await channel.send(f"Things we are doing well:\n```\n{feedback_form.answer3}\n```")
+            await channel.send(f"Improving engagement and activity:\n```\n{feedback_form.answer3}\n```")
         
         if feedback_form.answer4:
-            await channel.send(f"Things we are doing well:\n```\n{feedback_form.answer4}\n```")
+            await channel.send(f"Website and nazbot ideas:\n```\n{feedback_form.answer4}\n```")
         
         if feedback_form.answer5:
-            await channel.send(f"Things we are doing well:\n```\n{feedback_form.answer5}\n```")
+            await channel.send(f"Return feedback and suggestions:\n```\n{feedback_form.answer5}\n```")
 
 # And then we finally add the cog to the bot so that it can load, unload, reload and use it's content.
 async def setup(bot) -> None:
