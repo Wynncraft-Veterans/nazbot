@@ -64,7 +64,7 @@ class Activity(commands.Cog, name="activity"):
                 shout_info = pickle.load(open(f"{os.path.realpath(os.path.dirname(os.path.dirname(__file__)))}/database/shouting.pickle", 'rb'))
             except (OSError, IOError) as e:
                 shout_info = dict()
-                placeholder_time = datetime.now(timezone.utc) - timedelta(years=10)
+                placeholder_time = datetime.now(timezone.utc) - timedelta(weeks=120)
                 shout_info[placeholder_time] = 1348088845723238462
                 pickle.dump(shout_info, open(f"{os.path.realpath(os.path.dirname(os.path.dirname(__file__)))}/database/shouting.pickle", 'wb'))
             return shout_info
@@ -161,7 +161,7 @@ class Activity(commands.Cog, name="activity"):
                 shout_info = pickle.load(open(f"{os.path.realpath(os.path.dirname(os.path.dirname(__file__)))}/database/shouting.pickle", 'rb'))
             except (OSError, IOError) as e:
                 shout_info = dict()
-                placeholder_time = datetime.now(timezone.utc) - timedelta(years=10)
+                placeholder_time = datetime.now(timezone.utc) - timedelta(weeks=120)
                 shout_info[placeholder_time] = 1348088845723238462
                 pickle.dump(shout_info, open(f"{os.path.realpath(os.path.dirname(os.path.dirname(__file__)))}/database/shouting.pickle", 'wb'))
             return shout_info
