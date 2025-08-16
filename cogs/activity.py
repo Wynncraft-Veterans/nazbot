@@ -110,7 +110,7 @@ class Activity(commands.Cog, name="activity"):
         # If the guild is full, send a message to that effect.
         print('Checking if the guild is full')
         print(f'looks like there are' + str(guildInfo['total']) + ' users total, meaning ' + str(guildInfo['online'] > 78))
-        if guildInfo['total'] > 78:
+        if guildInfo['total'] > 83:
             print('The guild was full.')
             try:
                 prune_nag = pickle.load(open(f"{os.path.realpath(os.path.dirname(os.path.dirname(__file__)))}/database/pruning.pickle", 'rb'))

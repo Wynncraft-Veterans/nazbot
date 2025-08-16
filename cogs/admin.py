@@ -60,7 +60,7 @@ class Admin(commands.Cog, name="admin"):
             response = requests.get(linkToAPI)
             while response.status_code == 429:
                 await sendReply("We're getting ratelimited by an API. Trying again in a few seconds")
-                time.sleep(2.5)
+                time.sleep(7.5)
                 response = requests.get(linkToAPI)
             return response.json()
         
