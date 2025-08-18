@@ -93,7 +93,7 @@ class Activity(commands.Cog, name="activity"):
         # If the guild is dead, send a message to that effect.
         guildInfo = await fetchGuildStats()
         print(f'Checking if the guild is active enough')
-        print(f'looks like there are' + str(guildInfo['online']) + ' users online, meaning ' + str(guildInfo['online'] < 53))
+        print(f'looks like there are ' + str(guildInfo['online']) + ' users online, meaning ' + str(guildInfo['online'] < 3))
         if guildInfo['online'] < 2:
             print(f'Nobody was online')
             
@@ -109,8 +109,8 @@ class Activity(commands.Cog, name="activity"):
             
         # If the guild is full, send a message to that effect.
         print('Checking if the guild is full')
-        print(f'looks like there are' + str(guildInfo['total']) + ' users total, meaning ' + str(guildInfo['online'] > 78))
-        if guildInfo['total'] > 83:
+        print(f'looks like there are' + str(guildInfo['total']) + ' users total, meaning ' + str(guildInfo['online'] > 85))
+        if guildInfo['total'] > 85:
             print('The guild was full.')
             try:
                 prune_nag = pickle.load(open(f"{os.path.realpath(os.path.dirname(os.path.dirname(__file__)))}/database/pruning.pickle", 'rb'))
