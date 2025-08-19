@@ -1,0 +1,66 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:dev.db"
+}
+
+generator db {
+  provider             = "prisma-client-py"
+  interface            = "asyncio"
+  recursive_type_depth = 5
+}
+
+model Person {
+  id               String             @id @default(cuid())
+  name             String?
+  MinecraftAccount MinecraftAccount[]
+  DiscordAccount   DiscordAccount[]
+  Score            Score[]
+}
+
+model MinecraftAccount {
+  id       String  @id @default(cuid())
+  person   Person? @relation(fields: [personId], references: [id])
+  personId String?
+  uuid     String
+  guild    String?
+}
+
+model DiscordAccount {
+  id       String  @id @default(cuid())
+  person   Person? @relation(fields: [personId], references: [id])
+  personId String?
+  discUUID String
+  Shout    Shout[]
+}
+
+model WeeklyEvent {
+  id    String  @id @default(cuid())
+  title String?
+  Score Score[]
+}
+
+model Score {
+  id            String      @id @default(cuid())
+  event         WeeklyEvent @relation(fields: [weeklyEventId], references: [id])
+  person        Person      @relation(fields: [personId], references: [id])
+  score         Int
+  weeklyEventId String
+  personId      String
+}
+
+model DeadGuildAlert {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+}
+
+model GuildCapacityAlert {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+}
+
+model Shout {
+  id               String         @id @default(cuid())
+  person           DiscordAccount @relation(fields: [discordAccountId], references: [id])
+  createdAt        DateTime       @default(now())
+  discordAccountId String
+}
