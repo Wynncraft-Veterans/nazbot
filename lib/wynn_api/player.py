@@ -1,10 +1,8 @@
 import asyncio
-from lib.logger import Logger
 from lib.wynn_api.requestor import Requestor
 from lib.wynn_api.models import WynncraftPlayer
 
 requestor = Requestor()
-logger = Logger()
 
 async def get_player_main_stats(username_or_uuid: str) -> WynncraftPlayer:
     response = await requestor.get(f"https://api.wynncraft.com/v3/player/{username_or_uuid}")

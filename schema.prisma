@@ -14,7 +14,6 @@ model Person {
   name             String?
   MinecraftAccount MinecraftAccount[]
   DiscordAccount   DiscordAccount[]
-  Score            Score[]
 }
 
 model MinecraftAccount {
@@ -29,7 +28,7 @@ model DiscordAccount {
   id       String  @id @default(cuid())
   person   Person? @relation(fields: [personId], references: [id])
   personId String?
-  discUUID String
+  discUUID String  @unique
   Shout    Shout[]
   Score    Score[]
 }
@@ -37,6 +36,7 @@ model DiscordAccount {
 model WeeklyEvent {
   id    String  @id @default(cuid())
   title String?
+  week  Int     @unique
   Score Score[]
 }
 
@@ -46,9 +46,9 @@ model Score {
   discordAccount   DiscordAccount @relation(fields: [discordAccountId], references: [id])
   score            Int
   weeklyEventId    String
-  Person           Person?        @relation(fields: [personId], references: [id])
-  personId         String?
   discordAccountId String
+
+  @@unique([weeklyEventId, discordAccountId])
 }
 
 model DeadGuildAlert {
