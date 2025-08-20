@@ -1,41 +1,57 @@
+import logging
 import discord
 from discord.ext import commands
-import asyncio
 import os
-from lib.logger import Logger
-logger = Logger()
+from prisma import Prisma
+logger = logging.getLogger('discord.bot')
 from dotenv import load_dotenv
 load_dotenv()
 
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix=os.environ['PREFIX'], intents=intents)
 
-@bot.event
-async def on_ready():
-    logger.info(f'{bot.user} has connected to Discord!')
-    logger.info(f'Bot is in {len(bot.guilds)} guild(s)')
-    try:
-        synced = await bot.tree.sync()
-        logger.info(f'Synced {len(synced)} command(s)')
-    except Exception as e:
-        logger.error(f'Failed to sync commands: {e}')
-
-async def load_cogs():
-    """Load all cogs from the cogs directory"""
-    for filename in os.listdir('./cogs'):
-        if filename.endswith('.py') and not filename.startswith('__'):
-            cog_name = filename[:-3]
-            try:
-                await bot.load_extension(f'cogs.{cog_name}')
-                logger.info(f'Loaded cog: {cog_name}')
-            except Exception as e:
-                logger.error(f'Failed to load cog {cog_name}: {e}')
-
-async def main():
-    async with bot:
-        await load_cogs()
-        await bot.start(os.environ['TOKEN'])
+class Bot(commands.Bot):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.db = None
+    
+    async def setup_hook(self):
+        try:
+            self.db = Prisma()
+            await self.db.connect()
+            logger.info('Connected to database')
+        except Exception as e:
+            logger.error(f'Failed to connect to database: {e}')
+        # Then load cogs
+        await self._load_cogs()
+    
+    async def _load_cogs(self):
+        """Load all cogs from the cogs directory"""
+        for filename in os.listdir('./cogs'):
+            if filename.endswith('.py') and not filename.startswith('__'):
+                cog_name = filename[:-3]
+                try:
+                    await self.load_extension(f'cogs.{cog_name}')
+                    logger.info(f'Loaded cog: {cog_name}')
+                except Exception as e:
+                    logger.error(f'Failed to load cog {cog_name}: {e}')
+    
+    async def on_ready(self):
+        logger.info(f'{self.user} has connected to Discord!')
+        logger.info(f'Bot is in {len(self.guilds)} guild(s)')
+        try:
+            synced = await self.tree.sync()
+            logger.info(f'Synced {len(synced)} command(s)')
+        except Exception as e:
+            logger.error(f'Failed to sync commands: {e}')
+    
+    async def close(self):
+        logger.info('Shutting down bot...')
+        if self.db:
+            await self.db.disconnect()
+            logger.info('Disconnected from database')
+        await super().close()
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    bot = Bot(command_prefix=os.environ['PREFIX'], intents=intents)
+    bot.run(os.environ['TOKEN'])

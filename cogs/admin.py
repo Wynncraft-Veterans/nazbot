@@ -1,11 +1,12 @@
+import logging
 from discord.ext import commands
-from lib.logger import Logger
-logger = Logger()
+logger = logging.getLogger('discord.cogs.admin')
+from bot import Bot
 
 class Admin(commands.Cog):
-    bot: commands.Bot
+    bot: Bot
     
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: Bot):
         self.bot = bot
         logger.info("Admin cog initialized")
     
@@ -67,6 +68,6 @@ class Admin(commands.Cog):
             logger.error(f"Failed to unload cog '{cog_name}': {e}")
             await ctx.send(f'Failed to unload {cog_name}: {e}')
 
-async def setup(bot: commands.Bot):
+async def setup(bot: Bot):
     await bot.add_cog(Admin(bot))
     logger.info("Admin cog loaded successfully")

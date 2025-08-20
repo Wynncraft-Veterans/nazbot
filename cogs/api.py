@@ -1,12 +1,14 @@
+import logging
 from discord.ext import commands
-from lib.logger import Logger
 from lib.wynn_api.player import get_player_main_stats
-logger = Logger()
+logger = logging.getLogger('discord.cogs.api')
+from bot import Bot
+
 
 class API(commands.Cog):
-    bot: commands.Bot
+    bot: Bot
     
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: Bot):
         self.bot = bot
         logger.info("API cog initialized")
     
@@ -20,6 +22,6 @@ class API(commands.Cog):
             logger.error(f'[/joindate] {e}')
             await ctx.send(f'[/joindate] {e}')
 
-async def setup(bot: commands.Bot):
+async def setup(bot: Bot):
     await bot.add_cog(API(bot))
     logger.info("API cog loaded successfully")
