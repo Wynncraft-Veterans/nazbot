@@ -89,7 +89,10 @@ class Admin(commands.Cog, name="admin"):
                 await sendReply("From the guild's data, extracting members' dates last seen. [" + str(round(100 * processedItems / len(guildDatesList))) + "%]")
 
                 playerObject = await fetchAPI('https://api.wynncraft.com/v3/player/' + uuid)
-                seenDate = datetime.fromisoformat(playerObject['lastJoin'])
+                if str(playerObject['lastJoin']) == 'None':
+                    seenDate = datetime.now(timezone.utc)
+                else:
+                    seenDate = datetime.fromisoformat(str(playerObject['lastJoin']))
                 guildDatesList[uuid] = seenDate
 
             await sendReply("Filtering kickable date deltas and resolving to usernames")
