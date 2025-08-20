@@ -11,9 +11,13 @@ intents = discord.Intents.default()
 intents.message_content = True
 
 class Bot(commands.Bot):
+    db: Prisma
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.db = None
+        self.db = None # type: ignore
+        # should technically be assigned & connected before anything can
+        #  actually call this. keeping it None just in case it does happen
+        #  it'll be easier to debug like this.
     
     async def setup_hook(self):
         try:
@@ -47,6 +51,7 @@ class Bot(commands.Bot):
     
     async def close(self):
         logger.info('Shutting down bot...')
+        assert self.db is not None
         if self.db:
             await self.db.disconnect()
             logger.info('Disconnected from database')
