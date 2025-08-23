@@ -67,6 +67,14 @@ class Admin(commands.Cog):
         except Exception as e:
             logger.error(f"Failed to unload cog '{cog_name}': {e}")
             await ctx.send(f'Failed to unload {cog_name}: {e}')
+    
+    @commands.hybrid_command(name='say')
+    @commands.has_permissions(administrator=True)
+    async def say(self, ctx: commands.Context, msg: str):
+        if msg:
+            await ctx.send(msg)
+        else:
+            await ctx.send("I cant repeat an empty message you dummy 😡😡😡")
 
 async def setup(bot: Bot):
     await bot.add_cog(Admin(bot))
