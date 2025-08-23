@@ -13,7 +13,6 @@ class API(commands.Cog):
         logger.info("API cog initialized")
     
     @commands.hybrid_command(name='joindate', description='Sync slash commands')
-    @commands.has_permissions(administrator=True)
     async def joindate(self, ctx: commands.Context, username_or_uuid: str):
         try:
             player = await get_player_main_stats(username_or_uuid)
