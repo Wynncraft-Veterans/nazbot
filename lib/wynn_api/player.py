@@ -1,6 +1,6 @@
 import asyncio
 from lib.wynn_api.requestor import Requestor
-from lib.wynn_api.models import WynncraftPlayer
+from lib.wynn_api.player_models import WynncraftPlayer
 
 requestor = Requestor()
 
