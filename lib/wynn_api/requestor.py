@@ -1,9 +1,12 @@
 import asyncio
 import collections
+import logging
 import time
 from typing import Any, Optional
 import aiohttp
 from aiohttp import ClientResponse
+
+logger = logging.getLogger('discord.lib.requestor')
 
 
 class SingletonMeta(type):
@@ -36,7 +39,8 @@ class Requestor(metaclass=SingletonMeta):
         
         now = time.time()
         
-        if len(self.deque) >= 110:
+        if len(self.deque) >= 50:
+            logger.info("Throttling requests")
             sleep_time = 60 - (now - self.deque[0])
             if sleep_time > 0:
                 await asyncio.sleep(sleep_time)
@@ -47,7 +51,12 @@ class Requestor(metaclass=SingletonMeta):
     async def get(self, url: str, **kwargs: Any) -> ClientResponse:
         await self._rate_limit()
         session = await self._get_session()
-        return await session.get(url, **kwargs)
+        res = await session.get(url, **kwargs)
+        if res.status == 429:
+            logger.warning("Oops, exceded rate limit")
+            await asyncio.sleep(1)
+            res = await self.get(url, **kwargs)
+        return res
     
     async def close(self):
         if self._session and not self._session.closed:

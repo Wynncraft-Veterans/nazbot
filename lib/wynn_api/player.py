@@ -6,5 +6,13 @@ requestor = Requestor()
 
 async def get_player_main_stats(username_or_uuid: str) -> WynncraftPlayer:
     response = await requestor.get(f"https://api.wynncraft.com/v3/player/{username_or_uuid}")
-    player = WynncraftPlayer(**await response.json())
+    data = await response.json()
+    if isinstance(data, list):
+        player = next(
+            wp
+            for d in data
+            if (wp:=WynncraftPlayer(**d)).username == username_or_uuid or wp.uuid == username_or_uuid
+        )
+    else:
+        player = WynncraftPlayer(**data)
     return player

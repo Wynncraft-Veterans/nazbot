@@ -17,12 +17,13 @@ model Person {
 }
 
 model MinecraftAccount {
-  id       String  @id @default(cuid())
-  person   Person? @relation(fields: [personId], references: [id])
-  personId String?
-  uuid     String
-  guild    String?
-  lastOnline DateTime?
+  id         String   @id @default(cuid())
+  person     Person?  @relation(fields: [personId], references: [id])
+  personId   String?
+  uuid       String   @unique
+  guild      String?
+  username   String
+  lastOnline DateTime
 }
 
 model DiscordAccount {
@@ -64,7 +65,7 @@ model GuildCapacityAlert {
 
 model Shout {
   id               String         @id @default(cuid())
-  person           DiscordAccount @relation(fields: [discordAccountId], references: [id])
+  shouter          DiscordAccount @relation(fields: [discordAccountId], references: [id])
   createdAt        DateTime       @default(now())
   discordAccountId String
 }

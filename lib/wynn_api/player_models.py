@@ -1,4 +1,5 @@
-from pydantic import BaseModel
+from datetime import datetime
+from pydantic import BaseModel, Field, field_validator, validator
 from typing import Optional, Dict
 
 
@@ -11,7 +12,7 @@ class Guild(BaseModel):
     name: str
     prefix: str
     rank: str
-    rankStars: str
+    rankStars: Optional[str] = None
 
 
 class Dungeons(BaseModel):
@@ -44,23 +45,30 @@ class GlobalData(BaseModel):
 class WynncraftPlayer(BaseModel):
     username: str
     online: bool
-    server: str
+    server: Optional[str]
     activeCharacter: Optional[str] = None
     nickname: Optional[str] = None
     uuid: str
     rank: str
-    rankBadge: str
-    legacyRankColour: LegacyRankColour
+    rankBadge: Optional[str]
+    legacyRankColour: Optional[LegacyRankColour]
     shortenedRank: Optional[str] = None
-    supportRank: str
+    supportRank: Optional[str]
     veteran: Optional[bool] = None
-    firstJoin: str
-    lastJoin: str
-    playtime: float
-    guild: Guild
-    globalData: GlobalData
+    firstJoin: datetime = Field(default_factory=lambda: datetime.fromtimestamp(0))
+    lastJoin: datetime = Field(default_factory=lambda: datetime.fromtimestamp(0))
+    playtime: float = Field(default_factory=float)
+    guild: Optional[Guild]
+    globalData: Optional[GlobalData] = None
     forumLink: Optional[int] = None
     ranking: Dict[str, int]
     previousRanking: Dict[str, int]
     publicProfile: Optional[bool] = None
     onlineStatus: Optional[bool] = None
+
+    @field_validator('lastJoin', 'firstJoin', mode='before')
+    def handle_none_datetime(cls, v):
+        """Convert None to epoch datetime, let Pydantic handle everything else"""
+        if v is None:
+            return datetime.fromtimestamp(0)
+        return v

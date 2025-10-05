@@ -6,5 +6,13 @@ requestor = Requestor()
 
 async def get_guild(guild_name: str) -> Guild:
     response = await requestor.get(f"https://api.wynncraft.com/v3/guild/{guild_name}?identifier=username")
-    guild = Guild(**await response.json())
+    data = await response.json()
+    if isinstance(data, list):
+        guild = next(
+            g
+            for d in data
+            if (g:=Guild(**d)).name == guild_name
+        )
+    else:
+        guild = Guild(**data)
     return guild
