@@ -6,12 +6,11 @@ from discord.ext import commands, tasks
 from lib.lib import unwrap
 from lib.wynn_api.guild import get_guild
 from lib.wynn_api.player import get_player_main_stats
-from orm import MinecraftAccount
+from orm import DiscordAccount, MinecraftAccount, Shout
 logger = logging.getLogger('discord.cogs.activity')
-from prisma import Prisma
 from bot import Bot
 import dateparser
-
+from tortoise.expressions import Q
 
 
 class Activity(commands.Cog):
@@ -39,86 +38,40 @@ class Activity(commands.Cog):
                     "last_online": datetime.now()
                 }
             )
-            _ = await self.bot.db.minecraftaccount.upsert(
-                where={
-                    "uuid": member.uuid
-                },
-                data={
-                    "create": {
-                        "guild": guild.name,
-                        "uuid": member.uuid,
-                        "username": member.username,
-                        "lastOnline": datetime.now()
-                    },
-                    "update": {
-                        "guild": guild.name,
-                        "username": member.username,
-                        "lastOnline": datetime.now()
-                    }
-                }
-            )
         for member in offline:
-            _ = await self.bot.db.minecraftaccount.upsert(
-                where={
-                    "uuid": member.uuid
-                },
-                data={
-                    "create": {
-                        "guild": guild.name,
-                        "uuid": member.uuid,
-                        "username": member.username,
-                        "lastOnline": datetime.fromtimestamp(0)
-                    },
-                    "update": {
-                        "guild": guild.name,
-                        "username": member.username,
+            account, created = await MinecraftAccount.get_or_create(
+                uuid=member.uuid,
+                defaults={
+                    "guild": guild.name,
+                    "username": member.username,
+                    "last_online": datetime.fromtimestamp(0)
                     }
-                }
             )
+            
+            if not created:
+                account.guild = guild.name
+                account.username = member.username
+                await account.save(update_fields=['guild', 'username'])
         logger.info("members to check")
-        members_to_check = await self.bot.db.minecraftaccount.find_many(
-            where={
-                "OR": [
-                    {
-                        "lastOnline": {
-                            "lt": datetime.now() - timedelta(weeks=1)
-                        },
-                        "uuid": {
-                            "in": [m.uuid for m in offline]
-                        }
-                    },
-                    {
-                        "lastOnline": {
-                            "lt": datetime.now() - timedelta(weeks=1)
-                        },
-                        "uuid": {
-                            "not_in": [m.uuid for m in members]
-                        }
-                    }
-                ]
-            }
+        members_to_check = await MinecraftAccount.filter(
+            Q(
+                last_online__lt=datetime.now() - timedelta(weeks=2),
+                uuid__in=[m.uuid for m in offline]
+            ) | Q(
+                uuid__not_in=[m.uuid for m in members]
+            )
         )
         logger.info(f"checking members {len(members_to_check)=}")
         for member in members_to_check:
             logger.info(f"{member.username=} {member.uuid=}")
             player = await get_player_main_stats(member.uuid)
             guild_name = player.guild.name if player.guild else None
-            await self.bot.db.minecraftaccount.upsert(
-                where={
-                    "uuid": player.uuid
-                },
-                data={
-                    "create": {
-                        "guild": guild_name,
-                        "lastOnline": player.lastJoin,
-                        "username": player.username,
-                        "uuid": player.uuid
-                    },
-                    "update": {
-                        "guild": guild_name,
-                        "username": player.username,
-                        "lastOnline": player.lastJoin,
-                    },
+            await MinecraftAccount.update_or_create(
+                uuid=player.uuid,
+                defaults={
+                    "guild": guild_name,
+                    "last_online": player.lastJoin,
+                    "username": player.username,
                 }
             )
 
@@ -156,63 +109,42 @@ class Activity(commands.Cog):
     
     @commands.hybrid_command(name='purgelist')
     async def purgelist(self, ctx: commands.Context):
-        absent_guild_members = await self.bot.db.minecraftaccount.find_many(
-            where={
-                "guild": "Returners",
-                "lastOnline": {
-                    "lt": datetime.now() - timedelta(weeks=2)
-                }
-            },
-            order={
-                "lastOnline": "desc"
-            }
-        )
-
+        absent_guild_members = await MinecraftAccount.filter(
+            guild="Returners",
+            last_online__lt=datetime.now() - timedelta(weeks=2)
+        ).order_by('-last_online')
+        
         if not absent_guild_members:
             await ctx.send("No members have been away for more than 2 weeks.")
             return
-        logger.info([m.lastOnline.tzinfo for m in absent_guild_members])
+        
+        logger.info([m.last_online.tzinfo for m in absent_guild_members])
         logger.info(datetime.now().tzinfo)
+        
         await ctx.send("\n".join(
-            f"- `{m.username}` has been away for {(datetime.now(timezone.utc) - m.lastOnline).days} days."
+            f"- `{m.username}` has been away for {(datetime.now(timezone.utc) - m.last_online).days} days."
             for m in absent_guild_members
         ))
 
     @commands.hybrid_command(name='shout')
     async def shout(self, ctx: commands.Context):
-        await self.bot.db.shout.create(
-            data={
-                "shouter": {
-                    "connect_or_create": {
-                        "where": {
-                            "discUUID": str(ctx.author.id)
-                        },
-                        "create": {
-                            "discUUID": str(ctx.author.id)
-                        }
-                    }
-                }
-            }
+        discord_acc, _ = await DiscordAccount.get_or_create(
+            disc_uuid = str(ctx.author.id)
+        )
+        await Shout.create(
+            shouter=discord_acc
         )
         await ctx.send(f"Thank you for helping the guild, {ctx.author.mention}!\nYour shout has been recorded.")
         
     @commands.hybrid_command(name='last_shout')
     async def last_shout(self, ctx: commands.Context):
-        shouts = await self.bot.db.shout.find_many(
-            take=3,
-            order={
-                "createdAt": "desc"
-            },
-            include={
-                "shouter": True
-            }
-        )
+        shouts = await Shout.all().order_by('-created_at').limit(3).prefetch_related('shouter')
         lines = []
         for shout in shouts:
-            delta = datetime.now(timezone.utc) - shout.createdAt
-            user = await self.bot.fetch_user(int(unwrap(shout.shouter).discUUID))
+            delta = datetime.now(timezone.utc) - shout.created_at
+            user = await self.bot.fetch_user(int(shout.shouter.disc_uuid))
             lines.append(f"{user.mention} - {delta.seconds//3600} hours and {(delta.seconds//60)%60} minutes ago")
-            
+        
         if lines:
             await ctx.send('\n'.join(lines), silent=True)
         else:
@@ -220,13 +152,29 @@ class Activity(commands.Cog):
 
     @commands.hybrid_command(name='shouterboard')
     async def shouterboard(self, ctx: commands.Context):
-        shout_counter = await self.bot.db.shout.group_by(
-            by=["discordAccountId"],
-            count=True
-        )
-        c = shout_counter
-        logger.info(shout_counter)
-        # counter = sorted(c, key=lambda k_v: k_v[1])
+        from tortoise.functions import Count
+        
+        # Get counts with discord account info
+        shout_counter = await Shout.annotate(
+            shout_count=Count('id')
+        ).group_by('shouter_id').values('shouter_id', 'shout_count')
+        
+        sorted_counts = sorted(shout_counter, key=lambda x: x['shout_count'], reverse=True)
+        
+        shouter_ids = [item['shouter_id'] for item in sorted_counts]
+        shouters = await DiscordAccount.filter(id__in=shouter_ids)
+        shouter_dict = {s.id: s for s in shouters}
+        
+        lines = []
+        for item in sorted_counts:
+            shouter = shouter_dict[item['shouter_id']]
+            user = await self.bot.fetch_user(int(shouter.disc_uuid))
+            lines.append(f"{user.mention}: {item['shout_count']} shouts")
+        
+        if lines:
+            await ctx.send('\n'.join(lines))
+        else:
+            await ctx.send("No shouts recorded yet.")
 
 
 

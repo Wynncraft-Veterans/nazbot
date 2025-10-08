@@ -1,11 +1,8 @@
 from datetime import datetime, timedelta, timezone
 import logging
-from typing import Any
 import discord
 from discord.ext import commands
 import os
-from prisma import Prisma
-from tortoise import Tortoise
 
 from orm import close_db, init_db
 logger = logging.getLogger('discord.bot')
@@ -42,22 +39,15 @@ class NOSQL:
 
 
 class Bot(commands.Bot):
-    db: Prisma
     config: type[Config] = DevConfig
     nosql: NOSQL
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.db = None # type: ignore
-        # should technically be assigned & connected before anything can
-        #  actually call this. keeping it None just in case it does happen
-        #  it'll be easier to debug like this.
         self.nosql = NOSQL()
     
     async def setup_hook(self):
         try:
-            self.db = Prisma()
-            await self.db.connect()
             await init_db()
             logger.info('Connected to database')
         except Exception as e:
@@ -86,12 +76,25 @@ class Bot(commands.Bot):
     
     async def close(self):
         logger.info('Shutting down bot...')
-        assert self.db is not None
-        if self.db:
-            await self.db.disconnect()
-            logger.info('Disconnected from database')
         await close_db()
         await super().close()
+    
+    async def on_command_error(self, ctx: commands.Context, error):
+        if isinstance(error, commands.CommandInvokeError):
+            error = error.original
+        
+        if isinstance(error, (commands.RangeError, )):
+            await ctx.send(f"❌ {error}")
+        elif isinstance(error, commands.BadArgument):
+            await ctx.send(f"❌ Invalid argument: {error}")
+        elif isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send(f"❌ Missing argument: {error.param.name}")
+        elif isinstance(error, commands.CommandNotFound):
+            pass
+        else:
+            print(f"Unhandled error: {error}")
+            raise error
+
 
 if __name__ == '__main__':
     bot = Bot(command_prefix=os.environ['PREFIX'], intents=intents)
