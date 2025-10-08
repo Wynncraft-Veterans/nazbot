@@ -1,6 +1,9 @@
 import logging
+from math import ceil
+from typing import TypedDict
 import discord
 from discord.ext import commands
+from lib.discord_paginated_embed import Paginator, from_lines
 from lib.lib import unwrap
 from lib.wynn_api.player import get_player_main_stats
 from orm import DiscordAccount, Score, WeeklyEvent as WeeklyEventTable
@@ -113,6 +116,44 @@ class WeeklyEvent(commands.Cog):
             await ctx.send(text)
         else:
             await ctx.send(f"No one has any points for week {week}")
+    
+    @commands.hybrid_command(name="count")
+    async def count_reactions(self, ctx: commands.Context, channel: discord.ForumChannel):
+        threads = channel.threads
+        threads.extend([thread async for thread in channel.archived_threads(limit=None)])
+        logger.info(threads)
+        if not threads:
+            await ctx.send("No posts in this forum channel")
+            return
+        
+        Post = TypedDict('Post', {'msg': discord.Message, 'count': int})
+        posts: list[Post]  = []
+        for thread in threads:
+            try:
+                msg = await thread.fetch_message(thread.id)
+
+                reactors = []
+                for reaction in msg.reactions:
+                    if reaction.emoji != "✅": #TODO this is so scuffed lol
+                        continue
+                    reactors.extend([u async for u in reaction.users() if u.id != msg.author.id])
+                posts.append({'msg': msg, 'count': len(reactors)})
+            except Exception as e:
+                await ctx.send("Something failed, check logs.")
+                raise e
+        posts.sort(key=lambda e: e['count'], reverse=True)
+        logger.info(posts)
+        
+        
+        lines = []
+        for idx, item in enumerate(posts, start=1):
+            rank = "🥇" if idx == 1 else "🥈" if idx == 2 else "🥉" if idx == 3 else f"#{idx}"
+            lines.append(f"{rank} {item['msg'].author.mention} ✅ {item['count']}")
+
+        embeds = from_lines(f"Scoreboard: {channel.name}", lines, 10, logger)
+        await ctx.send(embed=embeds[0], view=Paginator(embeds))
+
+
 
 async def setup(bot: Bot):
     await bot.add_cog(WeeklyEvent(bot))

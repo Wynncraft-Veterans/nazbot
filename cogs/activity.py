@@ -1,8 +1,10 @@
 import asyncio
 from datetime import datetime, timedelta, timezone
 import logging
+from math import ceil
 import discord
 from discord.ext import commands, tasks
+from lib.discord_paginated_embed import Paginator, from_lines
 from lib.lib import unwrap
 from lib.wynn_api.guild import get_guild
 from lib.wynn_api.player import get_player_main_stats
@@ -77,11 +79,11 @@ class Activity(commands.Cog):
 
         alerts = []
         now = datetime.now(timezone.utc)
-        if len(online) <= self.bot.config.GUILD_DEAD_WHEN and now - self.bot.nosql.LAST_DEAD_ALERT <= self.bot.config.GUILD_DEAD_ALERT_DELTA:
+        if len(online) <= self.bot.config.GUILD_DEAD_WHEN and now - self.bot.nosql.LAST_DEAD_ALERT >= self.bot.config.GUILD_DEAD_ALERT_DELTA:
             self.bot.nosql.LAST_DEAD_ALERT = now
             alerts.append(self._low_count_alert())
         
-        if guild.members.total >= self.bot.config.GUILD_FULL_WHEN and now - self.bot.nosql.LAST_CAP_ALERT<= self.bot.config.GUILD_FULL_ALERT_DELTA:
+        if guild.members.total >= self.bot.config.GUILD_FULL_WHEN and now - self.bot.nosql.LAST_CAP_ALERT >= self.bot.config.GUILD_FULL_ALERT_DELTA:
             self.bot.nosql.LAST_CAP_ALERT = now
             alerts.append(self._guild_full_alert())
 
@@ -120,11 +122,12 @@ class Activity(commands.Cog):
         
         logger.info([m.last_online.tzinfo for m in absent_guild_members])
         logger.info(datetime.now().tzinfo)
+
+        lines = [f"- `{m.username}` has been away for {(datetime.now(timezone.utc) - m.last_online).days} days."
+            for m in reversed(absent_guild_members)]
         
-        await ctx.send("\n".join(
-            f"- `{m.username}` has been away for {(datetime.now(timezone.utc) - m.last_online).days} days."
-            for m in absent_guild_members
-        ))
+        embeds = from_lines('Purgelist', lines, 10, logger)
+        await ctx.send(embed=embeds[0], view=Paginator(embeds))
 
     @commands.hybrid_command(name='shout')
     async def shout(self, ctx: commands.Context):
@@ -172,9 +175,28 @@ class Activity(commands.Cog):
             lines.append(f"{user.mention}: {item['shout_count']} shouts")
         
         if lines:
-            await ctx.send('\n'.join(lines))
+            embeds = from_lines('Shouterboard', lines, 10, logger)
+            await ctx.send(embed=embeds[0], view=Paginator(embeds))
         else:
             await ctx.send("No shouts recorded yet.")
+    
+    @commands.hybrid_command(name='last_online')
+    async def last_online(self, ctx: commands.Context, username_or_uuid: str):
+        try:
+            player = await MinecraftAccount.get(
+                Q(
+                    uuid=username_or_uuid
+                ) | 
+                Q(
+                    username=username_or_uuid
+                )
+            )
+            ts = int(player.last_online.timestamp())
+            await ctx.send(f"{player.username} was last online on <t:{ts}:F>, which was <t:{ts}:R>")
+        except Exception as e:
+            logger.error(f'[/last_online] {e}')
+            await ctx.send(f'That user probably does not exist, is too new or is not in the guild.')
+            raise e
 
 
 

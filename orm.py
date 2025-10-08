@@ -103,8 +103,8 @@ async def init_db():
     from tortoise import Tortoise
     
     await Tortoise.init(
-        db_url='sqlite://dev2.db',
-        modules={'models': ['orm']}  # 'orm' because your file is orm.py
+        db_url='sqlite://dev.db',
+        modules={'models': ['orm']}
     )
     await Tortoise.generate_schemas()
 

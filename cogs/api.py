@@ -16,10 +16,12 @@ class API(commands.Cog):
     async def joindate(self, ctx: commands.Context, username_or_uuid: str):
         try:
             player = await get_player_main_stats(username_or_uuid)
-            await ctx.send(player.firstJoin)
+            ts = int(player.firstJoin.timestamp())
+            await ctx.send(f"Joindate for {player.username} is <t:{ts}:F>, which was <t:{ts}:R>")
         except Exception as e:
             logger.error(f'[/joindate] {e}')
-            await ctx.send(f'[/joindate] {e}')
+            await ctx.send(f'That user probably does not exist')
+            raise e
 
 async def setup(bot: Bot):
     await bot.add_cog(API(bot))

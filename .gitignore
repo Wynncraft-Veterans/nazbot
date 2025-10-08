@@ -182,4 +182,4 @@ database
 .vscode
 .env
 *.code-workspace
-dev.db
+dev.db*
