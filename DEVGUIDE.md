@@ -1,7 +1,5 @@
-1. `uv venv --python=3.13 .venv`
-2. activate venv
-3. `uv pip install pip`
-4. `pip install -r requirements.txt
+1. `uv sync`
+2. `uv run bot.py`
 
 
 Future notes:
