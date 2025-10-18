@@ -118,7 +118,15 @@ class WeeklyEvent(commands.Cog):
             await ctx.send(f"No one has any points for week {week}")
     
     @commands.hybrid_command(name="count")
-    async def count_reactions(self, ctx: commands.Context, channel: discord.ForumChannel, override_emoji: discord.PartialEmoji | None = None):
+    async def count_reactions(self, ctx: commands.Context, channel: discord.ForumChannel, override_emoji_argument: str | None = None):
+        override_emoji: discord.PartialEmoji | None = None
+        if override_emoji_argument:
+            try:
+                override_emoji = await commands.PartialEmojiConverter().convert(ctx, override_emoji_argument)
+            except commands.BadArgument as e:
+                await ctx.send(f"Invalid emoji: {e}")
+                return
+        
         threads = channel.threads
         threads.extend([thread async for thread in channel.archived_threads(limit=None)])
         logger.info(threads)
