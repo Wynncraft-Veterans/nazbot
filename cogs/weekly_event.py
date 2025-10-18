@@ -118,7 +118,7 @@ class WeeklyEvent(commands.Cog):
             await ctx.send(f"No one has any points for week {week}")
     
     @commands.hybrid_command(name="count")
-    async def count_reactions(self, ctx: commands.Context, channel: discord.ForumChannel):
+    async def count_reactions(self, ctx: commands.Context, channel: discord.ForumChannel, override_emoji: discord.Emoji | None = None):
         threads = channel.threads
         threads.extend([thread async for thread in channel.archived_threads(limit=None)])
         logger.info(threads)
@@ -134,7 +134,8 @@ class WeeklyEvent(commands.Cog):
 
                 reactors = []
                 for reaction in msg.reactions:
-                    if reaction.emoji != "✅": #TODO this is so scuffed lol
+                    emoji = next(e for e in (channel.default_reaction_emoji, override_emoji, '✅') if e is not None)
+                    if reaction.emoji != emoji: #TODO this is so scuffed lol
                         continue
                     reactors.extend([u async for u in reaction.users() if u.id != msg.author.id])
                 posts.append({'msg': msg, 'count': len(reactors)})
