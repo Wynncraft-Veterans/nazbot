@@ -127,6 +127,8 @@ class WeeklyEvent(commands.Cog):
                 await ctx.send(f"Invalid emoji: {e}")
                 return
         
+        emoji = next(e for e in (channel.default_reaction_emoji, override_emoji, '✅') if e is not None)
+        
         threads = channel.threads
         threads.extend([thread async for thread in channel.archived_threads(limit=None)])
         logger.info(threads)
@@ -142,7 +144,6 @@ class WeeklyEvent(commands.Cog):
 
                 reactors = []
                 for reaction in msg.reactions:
-                    emoji = next(e for e in (channel.default_reaction_emoji, override_emoji, '✅') if e is not None)
                     if reaction.emoji != emoji: #TODO this is so scuffed lol
                         continue
                     reactors.extend([u async for u in reaction.users() if u.id != msg.author.id])
@@ -157,7 +158,7 @@ class WeeklyEvent(commands.Cog):
         lines = []
         for idx, item in enumerate(posts, start=1):
             rank = "🥇" if idx == 1 else "🥈" if idx == 2 else "🥉" if idx == 3 else f"#{idx}"
-            lines.append(f"{rank} {item['msg'].author.mention} ✅ {item['count']}")
+            lines.append(f"{rank} {item['msg'].author.mention} {emoji} {item['count']}")
 
         embeds = from_lines(f"Scoreboard: {channel.name}", lines, 10, logger)
         await ctx.send(embed=embeds[0], view=Paginator(embeds))
