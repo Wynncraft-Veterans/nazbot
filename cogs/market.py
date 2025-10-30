@@ -31,7 +31,7 @@ class Market(commands.Cog, name="market"):
             has_posted_before = False
             # Scan recent history for a prior message by this author.
             # Increase limit if you expect large message counts; keep reasonable to avoid rate limits.
-            async for m in message.channel.history(limit=1000, oldest_first=False):
+            async for m in message.channel.history(limit=450, oldest_first=False):
                 if m.author.id == message.author.id and m.id != message.id:
                     has_posted_before = True
                     break
