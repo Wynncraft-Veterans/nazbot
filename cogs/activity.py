@@ -36,14 +36,14 @@ class Activity(commands.Cog, name="activity"):
                 color = discord.Color.greyple()
             )
             await channel.send(embed=embed)
-        async def shout_alert(description) -> None:
+        async def shout_alert(description, role_mention: str = "<@&1402295013169172500>") -> None:
             channel = self.bot.get_channel(1401676479300898939)
             embed = discord.Embed(
                 title = "Activity Alert",
                 description = description,
                 color = discord.Color.red()
             )
-            await channel.send(embed=embed, content="<@&1402295013169172500>")
+            await channel.send(embed=embed, content=role_mention)
         async def prune_alert(description) -> None:
             channel = self.bot.get_channel(1401676479300898939)
             embed = discord.Embed(
@@ -102,8 +102,24 @@ class Activity(commands.Cog, name="activity"):
             
             safetime = lastShout + timedelta(hours=8)
             if datetime.now(timezone.utc) > safetime:
-                await shout_alert(f'__**The guild is dead!**__\nWe are within the allowable shout period!\n\n> Who wants to claim this shout? :D\n> (Wen will pay, plus there are prizes!)')
-                print(f'Alerted the shouters channel')
+                if datetime.now(timezone.utc).hour > 21 and datetime.now(timezone.utc).hour <= 5:
+                    await shout_alert(
+                        '__**The guild is dead!**__\nWe are within the allowable shout period!\n\n> Who wants to claim this shout? :D\n> (Wen will pay, plus there are prizes!)',
+                        "<@&1402295013169172500>"  # Americas
+                    )
+                    print(f'Alerted the shouters channel with a americas notification.')
+                if datetime.now(timezone.utc).hour > 13 and datetime.now(timezone.utc).hour <= 21:
+                    await shout_alert(
+                        '__**The guild is dead!**__\nWe are within the allowable shout period!\n\n> Who wants to claim this shout? :D\n> (Wen will pay, plus there are prizes!)',
+                        "<@&1436108975132119221>"  # Europe
+                    )
+                    print(f'Alerted the shouters channel with a european notification.')
+                if datetime.now(timezone.utc).hour > 5 and datetime.now(timezone.utc).hour <= 13:
+                    await shout_alert(
+                        '__**The guild is dead!**__\nWe are within the allowable shout period!\n\n> Who wants to claim this shout? :D\n> (Wen will pay, plus there are prizes!)',
+                        "<@&1436109140195020892>"  # Asia
+                    )
+                    print(f'Alerted the shouters channel with a european notification.')
             else:
                 print('The guild is dead, but the last shout was too recent.')
             
