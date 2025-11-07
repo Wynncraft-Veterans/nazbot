@@ -211,8 +211,40 @@ class Activity(commands.Cog, name="activity"):
         
         shoutData = await fetchShoutData()
         value_counts = Counter(shoutData.values())
-        
-        await context.send(str(value_counts))
+
+        if not value_counts:
+            await context.send("No shouts recorded yet.")
+            return
+
+        # Sort by shout count descending and build a pretty top-10 leaderboard
+        sorted_counts = sorted(value_counts.items(), key=lambda kv: kv[1], reverse=True)
+        lines = []
+        rank = 1
+        for uid, count in sorted_counts:
+            # try cache first, then fetch if necessary
+            user = self.bot.get_user(uid)
+            if user is None:
+                try:
+                    user = await self.bot.fetch_user(uid)
+                except Exception:
+                    user = None
+
+            if user:
+                display = f"{user.name}#{user.discriminator}"
+                mention = f"<@{uid}>"
+            else:
+                display = f"Unknown User ({uid})"
+                mention = f"<@{uid}>"
+
+            lines.append(f"**{rank}. {display}** — {count} shouts — {mention}")
+            rank += 1
+            if rank > 20:
+                break
+
+        desc = "\n".join(lines)
+        embed = discord.Embed(title="Shouter Leaderboard", description=desc, color=discord.Color.blurple())
+        embed.set_footer(text="Top 10 shouters")
+        await context.send(embed=embed)
         
 
 async def setup(bot) -> None:
