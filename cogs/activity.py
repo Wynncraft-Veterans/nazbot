@@ -102,24 +102,24 @@ class Activity(commands.Cog, name="activity"):
             
             safetime = lastShout + timedelta(hours=8)
             if datetime.now(timezone.utc) > safetime:
-                if datetime.now(timezone.utc).hour > 21 and datetime.now(timezone.utc).hour <= 5:
-                    await shout_alert(
-                        '__**The guild is dead!**__\nWe are within the allowable shout period!\n\n> Who wants to claim this shout? :D\n> (Wen will pay, plus there are prizes!)',
-                        "<@&1402295013169172500>"  # Americas
-                    )
-                    print(f'Alerted the shouters channel with a americas notification.')
-                if datetime.now(timezone.utc).hour > 13 and datetime.now(timezone.utc).hour <= 21:
-                    await shout_alert(
-                        '__**The guild is dead!**__\nWe are within the allowable shout period!\n\n> Who wants to claim this shout? :D\n> (Wen will pay, plus there are prizes!)',
-                        "<@&1436108975132119221>"  # Europe
-                    )
-                    print(f'Alerted the shouters channel with a european notification.')
-                if datetime.now(timezone.utc).hour > 5 and datetime.now(timezone.utc).hour <= 13:
-                    await shout_alert(
-                        '__**The guild is dead!**__\nWe are within the allowable shout period!\n\n> Who wants to claim this shout? :D\n> (Wen will pay, plus there are prizes!)',
-                        "<@&1436109140195020892>"  # Asia
-                    )
-                    print(f'Alerted the shouters channel with a european notification.')
+                now_utc = datetime.now(timezone.utc)
+                hour = now_utc.hour
+
+                # Night (wraps midnight): 22..23 and 0..5
+                if hour > 21 or hour <= 5:
+                    role_mention = "<@&1402295013169172500>"  # Americas
+                # Afternoon: 14..21
+                elif 13 < hour <= 21:
+                    role_mention = "<@&1436108975132119221>"  # Europe
+                # Morning: 6..13
+                else:
+                    role_mention = "<@&1436109140195020892>"  # Asia
+
+                await shout_alert(
+                    '__**The guild is dead!**__\nWe are within the allowable shout period!\n\n> Who wants to claim this shout? :D\n> (Wen will pay, plus there are prizes!)',
+                    role_mention
+                )
+                print(f'Alerted the shouters channel with role {role_mention}.')
             else:
                 print('The guild is dead, but the last shout was too recent.')
             
