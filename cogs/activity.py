@@ -94,7 +94,7 @@ class Activity(commands.Cog, name="activity"):
         guildInfo = await fetchGuildStats()
         print(f'Checking if the guild is active enough')
         print(f'looks like there are ' + str(guildInfo['online']) + ' users online, meaning ' + str(guildInfo['online'] < 3))
-        if guildInfo['online'] < 2:
+        if guildInfo['online'] < 5:
             print(f'Nobody was online')
             
             shoutObject = await fetchShoutData()
@@ -158,7 +158,7 @@ class Activity(commands.Cog, name="activity"):
     @commands.hybrid_command(
         name="shout", description="Record your shout."
     )
-    @commands.has_any_role("Shouter")
+    @commands.has_any_role("AS/AU Shouter", "EU/AF Shouter", "AS/AU Shouter")
     async def shout(self, context: Context) -> None:
         """
         A command to record advertisments made for the guild.
