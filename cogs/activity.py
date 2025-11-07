@@ -236,14 +236,14 @@ class Activity(commands.Cog, name="activity"):
                 display = f"Unknown User ({uid})"
                 mention = f"<@{uid}>"
 
-            lines.append(f"**{rank}. {display}** — {count} shouts — {mention}")
+            lines.append(f"**{rank}. {mention}** — {count} shouts")
             rank += 1
             if rank > 20:
                 break
 
         desc = "\n".join(lines)
         embed = discord.Embed(title="Shouter Leaderboard", description=desc, color=discord.Color.blurple())
-        embed.set_footer(text="Top 10 shouters")
+        embed.set_footer(text="Top 20 shouters")
         await context.send(embed=embed)
         
 
