@@ -158,7 +158,7 @@ class Activity(commands.Cog, name="activity"):
     @commands.hybrid_command(
         name="shout", description="Record your shout."
     )
-    @commands.has_any_role("AS/AU Shouter", "EU/AF Shouter", "AS/AU Shouter")
+    @commands.has_any_role("NA/SA Shouter", "EU/AF Shouter", "AS/AU Shouter")
     async def shout(self, context: Context) -> None:
         """
         A command to record advertisments made for the guild.
